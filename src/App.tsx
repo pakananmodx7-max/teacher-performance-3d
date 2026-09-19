@@ -1,35 +1,45 @@
-import { AnimatePresence } from "framer-motion";
-import { Scene } from "./components/Scene";
-import { SlideView } from "./components/SlideView";
-import { SlideNav } from "./components/SlideNav";
-import { useSlideNavigation } from "./hooks/useSlideNavigation";
-import { slides } from "./content";
+import { useEffect, useRef } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { SceneRoot } from "./three/SceneRoot";
+import { scrollState } from "./three/store";
+import { TOTAL_SCROLL_VH } from "./three/journey";
+
+gsap.registerPlugin(ScrollTrigger);
 
 function App() {
-  const { slideIndex, direction, goTo, next, prev } = useSlideNavigation(slides.length);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const progressFillRef = useRef<HTMLDivElement>(null);
 
-  const currentSlide = slides[slideIndex];
+  useEffect(() => {
+    const trigger = ScrollTrigger.create({
+      trigger: trackRef.current,
+      start: "top top",
+      end: "bottom bottom",
+      scrub: 0.35,
+      onUpdate: (self) => {
+        scrollState.progress = self.progress;
+        if (progressFillRef.current) {
+          progressFillRef.current.style.height = `${self.progress * 100}%`;
+        }
+      },
+    });
+
+    return () => {
+      trigger.kill();
+    };
+  }, []);
 
   return (
-    <div className="presentation-root">
-      <div className="scene-layer">
-        <Scene theme={currentSlide.theme} slideIndex={slideIndex} totalSlides={slides.length} />
+    <>
+      <div className="canvas-layer">
+        <SceneRoot />
       </div>
-
-      <div className="stage">
-        <AnimatePresence custom={direction} mode="wait" initial={false}>
-          <SlideView key={slideIndex} slide={currentSlide} direction={direction} />
-        </AnimatePresence>
+      <div className="progress-rail">
+        <div ref={progressFillRef} className="progress-rail-fill" />
       </div>
-
-      <SlideNav
-        total={slides.length}
-        current={slideIndex}
-        onGoTo={goTo}
-        onPrev={prev}
-        onNext={next}
-      />
-    </div>
+      <div ref={trackRef} className="scroll-track" style={{ height: `${TOTAL_SCROLL_VH}vh` }} />
+    </>
   );
 }
 
