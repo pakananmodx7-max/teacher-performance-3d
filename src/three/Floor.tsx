@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import * as THREE from "three";
 import { MeanderRing } from "./Meander";
-import { PALETTE, getFloorNormalTexture } from "./materials";
+import { PALETTE, getFloorNormalTexture, bakedRgb } from "./materials";
 
 function buildSlabTexture(): THREE.CanvasTexture {
   const size = 512;
@@ -10,7 +10,7 @@ function buildSlabTexture(): THREE.CanvasTexture {
   canvas.height = size;
   const ctx = canvas.getContext("2d")!;
 
-  ctx.fillStyle = PALETTE.stoneFloor;
+  ctx.fillStyle = bakedRgb(PALETTE.stoneFloor);
   ctx.fillRect(0, 0, size, size);
 
   // Per-slab tonal variation between the dark/light charcoal bounds
@@ -51,7 +51,7 @@ function buildSlabTexture(): THREE.CanvasTexture {
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.colorSpace = THREE.SRGBColorSpace;
+  // colorSpace intentionally left at the default (linear) -- see bakedRgb in materials.ts.
   return tex;
 }
 
@@ -79,7 +79,9 @@ export function Floor({ width, depth, centerZ, inlayZ }: FloorProps) {
       map: tex,
       normalMap: normalTex,
       normalScale: new THREE.Vector2(0.5, 0.5),
-      color: PALETTE.stoneFloor,
+      // The map already carries the full charcoal tone (baked in bakedRgb); tinting with the
+      // same dark PALETTE.stoneFloor here would multiply it, needlessly crushing it further.
+      color: 0xffffff,
       roughness: 0.32,
       metalness: 0,
       clearcoat: 0.12,

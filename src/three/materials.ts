@@ -1,5 +1,24 @@
 import * as THREE from "three";
 
+// This sandbox's software GL driver corrupts sRGB-flagged CanvasTextures to solid black at
+// grazing view angles (reproduced and isolated via bisection: identical geometry/lighting, only
+// `colorSpace = THREE.SRGBColorSpace` on a canvas-sourced texture triggers it; plain `color`
+// properties and non-sRGB textures like normal maps are unaffected). Rather than flag these
+// procedural textures as sRGB and let the GPU decode them, every color baked into their canvases
+// is pre-converted here and the texture is left at the default (linear) colorSpace, so no
+// GPU-side sRGB decode ever runs on them.
+const bakeColor = new THREE.Color();
+export function bakedRgb(hex: string): string {
+  bakeColor.set(hex);
+  bakeColor.convertLinearToSRGB();
+  return `rgb(${Math.round(bakeColor.r * 255)}, ${Math.round(bakeColor.g * 255)}, ${Math.round(bakeColor.b * 255)})`;
+}
+export function bakedRgba(hex: string, alpha: number): string {
+  bakeColor.set(hex);
+  bakeColor.convertLinearToSRGB();
+  return `rgba(${Math.round(bakeColor.r * 255)}, ${Math.round(bakeColor.g * 255)}, ${Math.round(bakeColor.b * 255)}, ${alpha})`;
+}
+
 export const PALETTE = {
   marbleBase: "#ddd7ca",
   marbleShadow: "#918c83",
@@ -84,7 +103,7 @@ function buildMarbleCanvas(): HTMLCanvasElement {
   canvas.height = size;
   const ctx = canvas.getContext("2d")!;
 
-  ctx.fillStyle = PALETTE.marbleBase;
+  ctx.fillStyle = bakedRgb(PALETTE.marbleBase);
   ctx.fillRect(0, 0, size, size);
 
   for (let i = 0; i < 160; i++) {
@@ -93,13 +112,13 @@ function buildMarbleCanvas(): HTMLCanvasElement {
     const r = 20 + Math.random() * 60;
     const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
     const warm = Math.random() > 0.5;
-    grad.addColorStop(0, warm ? "rgba(241,236,226,0.14)" : "rgba(145,140,131,0.09)");
+    grad.addColorStop(0, warm ? bakedRgba(PALETTE.marbleHighlight, 0.14) : bakedRgba(PALETTE.marbleShadow, 0.09));
     grad.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, size, size);
   }
 
-  ctx.strokeStyle = "rgba(145,140,131,0.2)";
+  ctx.strokeStyle = bakedRgba(PALETTE.marbleShadow, 0.2);
   ctx.lineWidth = 1.2;
   for (let v = 0; v < 8; v++) {
     let x = Math.random() * size;
@@ -121,7 +140,7 @@ export function getMarbleTexture(): THREE.CanvasTexture {
   if (!marbleTexture) {
     marbleTexture = new THREE.CanvasTexture(buildMarbleCanvas());
     marbleTexture.wrapS = marbleTexture.wrapT = THREE.RepeatWrapping;
-    marbleTexture.colorSpace = THREE.SRGBColorSpace;
+    // colorSpace intentionally left at the default (linear) -- see bakedRgb/bakedRgba above.
   }
   return marbleTexture;
 }

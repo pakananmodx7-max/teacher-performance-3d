@@ -50,9 +50,8 @@ export function LightingRig() {
       {/* Key sun: warm, soft, from over the camera's right shoulder. The shadow camera's
           default target sits at the world origin, but the architecture (and the floor
           especially) extends from z~3 out to z~46 -- well outside a target-at-origin
-          frustum. Without an explicit target centred on the scene, everything beyond the
-          frustum's edge falls outside shadow-map coverage and reads back as fully shadowed
-          (black), which is what was crushing the near-camera floor to solid black. */}
+          frustum. An explicit target centred on the scene (with a matching wider frustum)
+          keeps the whole floor inside shadow-map coverage. */}
       <directionalLight
         ref={sunRef}
         position={[20, 24, 22]}
