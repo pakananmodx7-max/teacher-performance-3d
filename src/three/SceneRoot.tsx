@@ -1,5 +1,6 @@
 import { Canvas } from "@react-three/fiber";
-import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
+import { EffectComposer, Bloom, SSAO, Vignette } from "@react-three/postprocessing";
+import { BlendFunction } from "postprocessing";
 import * as THREE from "three";
 import { CameraRig } from "./CameraRig";
 import { ShaderWarmup } from "./ShaderWarmup";
@@ -10,6 +11,7 @@ import { Stairs, Platform } from "./Architecture";
 import { Colonnade } from "./Colonnade";
 import { Entablature } from "./Entablature";
 import { GenerativeMeander } from "./Meander";
+import { LightShafts } from "./LightShafts";
 import { PALetters, BareText } from "./PALetters";
 import { Part1Reveal } from "./Part1Reveal";
 import {
@@ -29,13 +31,13 @@ export function SceneRoot() {
 
   return (
     <Canvas
-      shadows
+      shadows="soft"
       dpr={[1, 1.75]}
       gl={{
         antialias: true,
         powerPreference: "high-performance",
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.05,
+        toneMappingExposure: 1.15,
       }}
       camera={{ position: [0, 1.7, 18], fov: 45, near: 0.1, far: 200 }}
     >
@@ -49,6 +51,7 @@ export function SceneRoot() {
 
       <Colonnade />
       <Entablature width={12} z={ENTRY_Z} columnTopY={PLATFORM_Y + 8.4} />
+      <LightShafts />
 
       <GenerativeMeander position={[0, 2.6, 10]} range={MEANDER_RANGE} />
 
@@ -64,7 +67,15 @@ export function SceneRoot() {
 
       <ShaderWarmup />
 
-      <EffectComposer multisampling={0}>
+      <EffectComposer multisampling={0} enableNormalPass>
+        <SSAO
+          intensity={2.2}
+          radius={0.28}
+          samples={12}
+          luminanceInfluence={0.4}
+          bias={0.03}
+          blendFunction={BlendFunction.MULTIPLY}
+        />
         <Bloom luminanceThreshold={0.65} luminanceSmoothing={0.25} intensity={0.55} mipmapBlur radius={0.5} />
         <Vignette eskil={false} offset={0.15} darkness={0.75} />
       </EffectComposer>

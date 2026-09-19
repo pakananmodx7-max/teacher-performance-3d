@@ -1,7 +1,7 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { createGoldMaterial } from "./materials";
+import { createGoldMaterial, createMarbleMaterial, PALETTE } from "./materials";
 import { ConstructedMesh } from "./ConstructedMesh";
 import { rangeEmphasis } from "./cameraPath";
 import { scrollState } from "./store";
@@ -59,6 +59,9 @@ export function GreekColumn({ position, height = 9, constructionRange }: GreekCo
     [shaftHeight],
   );
 
+  // Shared physical-marble material for the trim (base/capital): real normal-map relief and a
+  // touch of clearcoat so these edges pick up rim light instead of reading flat/computer-generated.
+  const trimMaterial = useMemo(() => createMarbleMaterial(1.4, { roughness: 0.56 }), []);
   const goldTrim = useMemo(() => createGoldMaterial({ emissiveIntensity: 0.18 }), []);
   const baseRef = useRef<THREE.Group>(null);
   const capitalRef = useRef<THREE.Group>(null);
@@ -77,42 +80,35 @@ export function GreekColumn({ position, height = 9, constructionRange }: GreekCo
       {/* Base: square plinth + torus + transition (hidden until the shaft is well under construction,
           so nothing casts a shadow before there is a visible column to cast it) */}
       <group ref={baseRef}>
-        <mesh position={[0, 0.09, 0]} castShadow receiveShadow>
+        <mesh position={[0, 0.09, 0]} castShadow receiveShadow material={trimMaterial}>
           <boxGeometry args={[1.3, 0.18, 1.3]} />
-          <meshStandardMaterial color="#e7e0d3" roughness={0.62} />
         </mesh>
-        <mesh position={[0, 0.27, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <mesh position={[0, 0.27, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow material={trimMaterial}>
           <torusGeometry args={[0.5, 0.09, 12, 28]} />
-          <meshStandardMaterial color="#e7e0d3" roughness={0.6} />
         </mesh>
-        <mesh position={[0, 0.43, 0]} castShadow>
+        <mesh position={[0, 0.43, 0]} castShadow material={trimMaterial}>
           <cylinderGeometry args={[0.51, 0.44, 0.14, 28]} />
-          <meshStandardMaterial color="#e7e0d3" roughness={0.6} />
         </mesh>
       </group>
 
       {/* Fluted shaft (constructed: points -> wireframe -> marble) */}
       <group position={[0, 0.5 + shaftHeight / 2, 0]}>
-        <ConstructedMesh geometry={shaftGeometry} color="#e7e0d3" constructionRange={constructionRange} />
+        <ConstructedMesh geometry={shaftGeometry} color={PALETTE.marbleBase} constructionRange={constructionRange} />
       </group>
 
       {/* Capital: necking, echinus, abacus */}
       <group ref={capitalRef} position={[0, 0.5 + shaftHeight, 0]}>
-        <mesh position={[0, 0.09, 0]} castShadow>
+        <mesh position={[0, 0.09, 0]} castShadow material={trimMaterial}>
           <cylinderGeometry args={[0.42, topR, 0.18, 28]} />
-          <meshStandardMaterial color="#e7e0d3" roughness={0.6} />
         </mesh>
-        <mesh position={[0, 0.33, 0]} castShadow>
+        <mesh position={[0, 0.33, 0]} castShadow material={trimMaterial}>
           <cylinderGeometry args={[0.62, 0.42, 0.3, 28]} />
-          <meshStandardMaterial color="#e7e0d3" roughness={0.58} />
         </mesh>
-        <mesh position={[0, 0.5, 0]} castShadow>
+        <mesh position={[0, 0.5, 0]} castShadow material={trimMaterial}>
           <boxGeometry args={[1.42, 0.1, 1.42]} />
-          <meshStandardMaterial color="#e7e0d3" roughness={0.58} />
         </mesh>
-        <mesh position={[0, 0.6, 0]} castShadow>
+        <mesh position={[0, 0.6, 0]} castShadow material={trimMaterial}>
           <boxGeometry args={[1.32, 0.12, 1.32]} />
-          <meshStandardMaterial color="#e7e0d3" roughness={0.55} />
         </mesh>
         <mesh position={[0, 0.665, 0]}>
           <boxGeometry args={[1.34, 0.02, 1.34]} />
