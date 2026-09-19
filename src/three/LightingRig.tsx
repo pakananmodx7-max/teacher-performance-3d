@@ -47,7 +47,12 @@ export function LightingRig() {
           light so those never crush to black; ground colour is the warm bounce for undersides. */}
       <hemisphereLight ref={hemiRef} args={["#6b7a8c", "#4a3f34", 0.85]} color="#6b7a8c" groundColor="#4a3f34" />
 
-      {/* Key sun: warm, soft, from over the camera's right shoulder */}
+      {/* Key sun: warm, soft, from over the camera's right shoulder. The shadow camera's
+          default target sits at the world origin, but the architecture (and the floor
+          especially) extends from z~3 out to z~46 -- well outside a target-at-origin
+          frustum. Without an explicit target centred on the scene, everything beyond the
+          frustum's edge falls outside shadow-map coverage and reads back as fully shadowed
+          (black), which is what was crushing the near-camera floor to solid black. */}
       <directionalLight
         ref={sunRef}
         position={[20, 24, 22]}
@@ -57,15 +62,17 @@ export function LightingRig() {
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-camera-near={1}
-        shadow-camera-far={80}
-        shadow-camera-left={-24}
-        shadow-camera-right={24}
-        shadow-camera-top={24}
-        shadow-camera-bottom={-24}
-        shadow-bias={-0.0012}
-        shadow-normalBias={0.02}
+        shadow-camera-far={90}
+        shadow-camera-left={-40}
+        shadow-camera-right={40}
+        shadow-camera-top={40}
+        shadow-camera-bottom={-40}
+        shadow-bias={-0.0015}
+        shadow-normalBias={0.03}
         shadow-radius={4}
-      />
+      >
+        <object3D attach="target" position={[0, 2, 24]} />
+      </directionalLight>
 
       {/* Large cool fill from front-left, keeps shadow faces readable */}
       <directionalLight ref={fillRef} position={[-18, 12, 20]} intensity={0.25} color="#b9c9e6" />
